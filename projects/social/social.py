@@ -1,3 +1,7 @@
+from util import Queue, Stack
+from graph import Graph
+import random
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -17,8 +21,9 @@ class SocialGraph:
         elif friend_id in self.friendships[user_id] or user_id in self.friendships[friend_id]:
             print("WARNING: Friendship already exists")
         else:
-            self.friendships[user_id].add(friend_id)
-            self.friendships[friend_id].add(user_id)
+            self.friendships[user_id].add(friend_id) #creating the edges
+            self.friendships[user_id].add(friend_id) #creating the edges
+            self.friendships[friend_id].add(user_id) 
 
     def add_user(self, name):
         """
@@ -27,6 +32,12 @@ class SocialGraph:
         self.last_id += 1  # automatically increment the ID to assign the new user
         self.users[self.last_id] = User(name)
         self.friendships[self.last_id] = set()
+
+    def get_neighbors(self, vertex_id):
+        """
+        Get all neighbors (edges) of a vertex.
+        """
+        return self.friendships[vertex_id]  # TODO
 
     def populate_graph(self, num_users, avg_friendships):
         """
@@ -39,15 +50,37 @@ class SocialGraph:
         The number of users must be greater than the average number of friendships.
         """
         # Reset graph
-        self.last_id = 0
-        self.users = {}
-        self.friendships = {}
+        self.last_id = 0 #gets incremented by add_user
+        self.users = {}  #these are the nodes/vertices
+        self.friendships = {} #these are the edges
         # !!!! IMPLEMENT ME
 
         # Add users
+        for i in range (0, num_users):
+            self.add_user(f"User {i}")
 
         # Create friendships
+        possible_friendships = []
 
+        for user_id in self.users:
+            for friend_id in range(user_id + 1, self.last_id + 1):
+                possible_friendships.append((user_id, friend_id))
+
+        #Shuffle them
+        random.shuffle(possible_friendships)
+
+        #Choose the first x amount out of the list
+        for i in range(num_users * avg_friendships // 2):
+
+            #set up those friendships
+            friendship = possible_friendships[i]
+            self.add_friendship(friendship[0], friendship[1])
+
+
+
+
+    
+    
     def get_all_social_paths(self, user_id):
         """
         Takes a user's user_id as an argument
@@ -57,8 +90,30 @@ class SocialGraph:
 
         The key is the friend's ID and the value is the path.
         """
-        visited = {}  # Note that this is a dictionary, not a set
+        # visited = {}  # Note that this is a dictionary, not a set
         # !!!! IMPLEMENT ME
+        q = Queue()  # TODO
+        
+        #Add starting vertice to the queue
+        q.enqueue([user_id])
+
+        visited = {}
+
+        while q.size() > 0:
+            path = q.dequeue()
+            #Get the last vertex from the path
+            last_vertice = path[-1]
+            
+
+
+            #Check to see if it's been visited
+            if last_vertice not in visited:
+                visited[last_vertice] = path
+
+                for neighbor in self.get_neighbors(last_vertice):
+                    path_copy = path.copy()
+                    path_copy.append(neighbor)
+                    q.enqueue(path_copy)
         return visited
 
 
@@ -66,5 +121,5 @@ if __name__ == '__main__':
     sg = SocialGraph()
     sg.populate_graph(10, 2)
     print(sg.friendships)
-    connections = sg.get_all_social_paths(1)
+    connections = sg.get_all_social_paths(3)
     print(connections)
